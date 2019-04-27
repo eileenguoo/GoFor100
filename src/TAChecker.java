@@ -1,3 +1,7 @@
+/** 
+ * @author Elieen Guo
+ * @email guoh@brandeis.edu
+ */
 import java.io.*;
 import java.util.*;
 

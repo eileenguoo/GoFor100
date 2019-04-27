@@ -1,4 +1,7 @@
-
+/** 
+ * @author Elieen Guo
+ * @email guoh@brandeis.edu
+ */
 public class WorkLog {
     private int[] invoiceIDs;
     private int lineNumber;
