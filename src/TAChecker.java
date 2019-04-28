@@ -19,14 +19,20 @@ public class TAChecker {
     public void submitInvoice(TARecord record, int[] invoiceIDs, int line_num) {
 		WorkLog workLog = new WorkLog(invoiceIDs, line_num);
     	Arrays.sort(invoiceIDs);
+    	boolean suspicious = false;
     	for (int i : invoiceIDs) {
     		if (i >= maxInvoiceID) {
     			maxInvoiceID = i;
     		}
     		else {
-    			if (invoiceIDs.length > 1) {
-    				record.addViolation(workLog, 0);
-    			}
+    			suspicious = true;
+    		}
+    	}
+    	if (suspicious) {
+			if (invoiceIDs.length > 1) {
+				record.addViolation(workLog, 0);
+			}
+			else {
 				record.addViolation(workLog, 1);
     		}
     	}
@@ -64,6 +70,9 @@ public class TAChecker {
     }
     
     public void checkValidity() {
+    	for(String s : TARecords.keySet()) {
+    		System.out.println(TARecords.get(s).getViolations());
+    	}
     	
     }
     
@@ -73,6 +82,7 @@ public class TAChecker {
 		String s = console.nextLine();
 		TAChecker check = new TAChecker(s);
 		check.sortWorkLog();
-		
+		check.checkValidity();
+		console.close();
 	}
 }

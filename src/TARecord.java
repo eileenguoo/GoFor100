@@ -20,6 +20,8 @@ public class TARecord {
 	public TARecord (String name) {
 	    this.name = name;
 	    startedWorks = 0;
+	    workLogs = new ArrayList<WorkLog>();
+	    violations = new ArrayList<String>();
 	}
 	
 	public void startWork () {
@@ -37,6 +39,10 @@ public class TARecord {
 	    }
 	    workLogs.add(workLog);
 	    endWork(invoiceIDs.length);
+	}
+	
+	public ArrayList<String> getViolations(){
+		return violations;
 	}
 	
 	public void addViolation (WorkLog workLog, int type) {
