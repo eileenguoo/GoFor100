@@ -1,88 +1,154 @@
-/** 
- * @author Elieen Guo
+/**
+ * @author Eileen Guo
  * @email guoh@brandeis.edu
  */
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.*;
 
 public class TAChecker {
-    private HashMap<String, TARecord> TARecords;
-    private int maxInvoiceID;
-    String fileName;
-    
-    public TAChecker(String s) {
-        TARecords = new HashMap<String, TARecord>();
-        maxInvoiceID = 0;
-        fileName = s;
-    }
-   
-    public void submitInvoice(TARecord record, int[] invoiceIDs, int line_num) {
-		WorkLog workLog = new WorkLog(invoiceIDs, line_num);
-    	Arrays.sort(invoiceIDs);
-    	boolean suspicious = false;
-    	for (int i : invoiceIDs) {
-    		if (i >= maxInvoiceID) {
-    			maxInvoiceID = i;
-    		}
-    		else {
-    			suspicious = true;
-    		}
-    	}
-    	if (suspicious) {
-			if (invoiceIDs.length > 1) {
-				record.addViolation(workLog, 0);
-			}
-			else {
-				record.addViolation(workLog, 1);
-    		}
-    	}
-		record.submitInvoice(workLog);
+    /**
+     * stores each line's TA name
+     */
+    ArrayList<String> TANames;
+    /**
+     * maps TA's name to its record
+     */
+    HashMap<String, TARecord> TARecords;
+
+    public TAChecker() {
+        TARecords = new HashMap<>();
+        TANames = new ArrayList<>();
     }
     
-    public void sortWorkLog() throws FileNotFoundException {
-        Scanner input = new Scanner(new File(fileName));
-        int line_num = 0;
-        while(input.hasNextLine()) {
-        	line_num++;
-        	String line = input.nextLine();
-	        String[] str = line.split(";");
-	        String name = str[0];
-	        TARecord record;
-	        if(TARecords.containsKey(name)) 
-	        	record = TARecords.get(name);
-	        else {
-	        	record = new TARecord(name);
-	        	TARecords.put(name, record);
-	        }
-	        
-	    	if (str[1].equals("START"))
-	    		record.startWork();
-        	else {
-        		String[] strIDs = str[1].split(",");
-        		int[] invoiceIDs = new int[strIDs.length];
-        		for(int i = 0; i < strIDs.length; i++) {
-        			invoiceIDs[i] = Integer.parseInt(strIDs[i]);
-        		}
-        		submitInvoice(record, invoiceIDs, line_num);
-        	}
+    /**
+     * read text file to ta record
+     *
+     * @param file
+     */
+    public void sortWorkLog(String file) {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(file));
+            String line = br.readLine();
+            int lineNumber = 1;
+            while (line != null) {
+                String[] input = line.split(";");
+                String name = input[0].trim();
+                TARecord record;
+                if (TARecords.containsKey(name)) {
+                    record = TARecords.get(name);
+                } else {
+                    record = new TARecord(name);
+                    TARecords.put(name, record);
+                }
+                TANames.add(name);
+                String action = input[1];
+                // Job start event
+                if (action.equals("START")) {
+                    record.addStart(lineNumber);
+                }
+                else {
+                    // Job end events
+                    String[] ids = action.split(",");
+                    ArrayList<Integer> invoiceIds = new ArrayList<>();
+                    for (String id : ids) {
+                        invoiceIds.add(Integer.parseInt(id.trim()));
+                    }
+                    // sort INVOICE id
+                    Collections.sort(invoiceIds);
+                    record.addEnd(lineNumber, invoiceIds);
+                }
+                line = br.readLine();
+                lineNumber++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null)
+                try {
+                    br.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
         }
-        input.close();
     }
-    
+
+    /**
+     * check input record validity
+     */
     public void checkValidity() {
-    	for(String s : TARecords.keySet()) {
-    		System.out.println(TARecords.get(s).getViolations());
-    	}
-    	
+        // previous invoice id
+        int preId = 0;
+        HashMap<Integer, Violation> violations = new HashMap<> ();
+        
+        for (int i = 0; i < TANames.size(); ++i) {
+            int lineNumber = i + 1;
+            String name = TANames.get(i);
+            TARecord record = TARecords.get(name);
+
+            if (record.isStart(lineNumber)) {
+                //  get its invoice id
+                int currentId = record.getInvoiceId(lineNumber);
+                if (currentId > preId) {
+                    preId = currentId;
+                }
+                else {
+                    // if invoice id larger than submit id before start => SHORTENED_JOB
+                    Violation violation = new Violation(lineNumber, name, "SHORTENED_JOB");
+                    violations.put(lineNumber, violation);
+                }
+            }
+            // this is unstarted job
+            else if (record.isUnstarted(lineNumber)) {
+                Violation violation = new Violation(lineNumber, name, "UNSTARTED_JOB");
+                violations.put(lineNumber, violation);
+            }
+            // this is a batch
+            else if (record.isBatch(lineNumber)) {
+                List<Integer> batchLineNumbers = record.getBatchLineNumbers(lineNumber);
+                // count of shortened jobs
+                List<Integer> shortenedJobs = new ArrayList<>();
+                for (int batchLineNumber : batchLineNumbers) {
+                    if (violations.containsKey(batchLineNumber)) {
+                        Violation violation = violations.get(batchLineNumber);
+                        String type = violation.getType();
+                        if (type.equals("SHORTENED_JOB")) {
+                            shortenedJobs.add(batchLineNumber);
+                        }
+                    }
+                }
+                // at least 1 shortened job
+                if (shortenedJobs.size() > 0) {
+                    if (shortenedJobs.size() < batchLineNumbers.size()) {
+                        // this is a SUSPICIOUS_BATCH
+                        // don't include shortened jobs
+                        for (int shortenedJob : shortenedJobs) {
+                            Violation violation = violations.get(shortenedJob);
+                            violation.setInclude(false);
+                        }
+                        Violation violation = new Violation(lineNumber, name, "SUSPICIOUS_BATCH");
+                        violations.put(lineNumber, violation);
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < TANames.size(); ++i) {
+            int lineNumber = i + 1;
+            if (violations.containsKey(lineNumber)) {
+                Violation violation = violations.get(lineNumber);
+                violation.print();
+            }
+        }        
     }
-    
-	public static void main(String [] args) throws FileNotFoundException {
-		Scanner console = new Scanner(System.in);
-		System.out.println("Enter a work log:");
-		String s = console.nextLine();
-		TAChecker check = new TAChecker(s);
-		check.sortWorkLog();
-		check.checkValidity();
-		console.close();
-	}
+
+    public static void main(String[] args) {
+        TAChecker taChecker = new TAChecker();
+        System.out.println("Enter a work log:");
+        Scanner scanner = new Scanner(System.in);
+        String file = scanner.nextLine();
+        taChecker.sortWorkLog(file);
+        taChecker.checkValidity();
+        scanner.close();
+    }
 }
