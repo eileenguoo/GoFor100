@@ -7,29 +7,27 @@ import java.io.FileReader;
 import java.util.*;
 
 public class TAChecker {
-    /**
-     * stores each line's TA name
-     */
-    ArrayList<String> TANames;
-    /**
-     * maps TA's name to its record
-     */
-    HashMap<String, TARecord> TARecords;
 
-    public TAChecker() {
+    ArrayList<String> TANames;
+    HashMap<String, TARecord> TARecords;
+    String fileName;
+
+    public TAChecker(String s) {
         TARecords = new HashMap<>();
         TANames = new ArrayList<>();
+        fileName = s;
     }
+    
     
     /**
      * read text file to ta record
      *
      * @param file
      */
-    public void sortWorkLog(String file) {
+    public void sortWorkLog() {
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(file));
+            br = new BufferedReader(new FileReader(fileName));
             String line = br.readLine();
             int lineNumber = 1;
             while (line != null) {
@@ -143,11 +141,11 @@ public class TAChecker {
     }
 
     public static void main(String[] args) {
-        TAChecker taChecker = new TAChecker();
         System.out.println("Enter a work log:");
         Scanner scanner = new Scanner(System.in);
         String file = scanner.nextLine();
-        taChecker.sortWorkLog(file);
+        TAChecker taChecker = new TAChecker(file);
+        taChecker.sortWorkLog();
         taChecker.checkValidity();
         scanner.close();
     }
