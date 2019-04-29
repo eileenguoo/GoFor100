@@ -142,11 +142,11 @@ public class TAChecker {
 
     public static void main(String[] args) {
         System.out.println("Enter a work log:");
-        Scanner scanner = new Scanner(System.in);
-        String file = scanner.nextLine();
+        Scanner console = new Scanner(System.in);
+        String file = console.nextLine();
         TAChecker taChecker = new TAChecker(file);
         taChecker.sortWorkLog();
         taChecker.checkValidity();
-        scanner.close();
+        console.close();
     }
 }
