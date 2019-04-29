@@ -23,8 +23,13 @@ public class TARecord {
     /**
      * maps a start line number to invoiceIDs
      */
-    private HashMap<Integer, Integer> lineNumberToIds;
+    private HashMap<Integer, Integer> startLineToIds;
     
+    /**
+     * maps a end line number to its invoice ID
+     */
+    private HashMap<Integer, Integer> endLineToIds;
+
     /**
      * unstarted lines
      */
@@ -35,10 +40,12 @@ public class TARecord {
      */
     private HashMap<Integer, List<Integer>> batches;
     
+    
     public TARecord(String name) {
         this.name = name;
         startLineNumbers = new LinkedList<>();
-        lineNumberToIds = new HashMap<>();
+        startLineToIds = new HashMap<>();
+        endLineToIds = new HashMap<>();
         unstartedLineNumbers = new ArrayList<>();
         batches = new HashMap<>();
     }
@@ -75,18 +82,19 @@ public class TARecord {
                 return;
             }
             int startLineNumber = startLineNumbers.removeFirst();
-            lineNumberToIds.put(startLineNumber, invoiceIds.get(0));
+            startLineToIds.put(startLineNumber, invoiceIds.get(0));
         }
         // this is a batch
         else {
             List<Integer> lineNumbers = new ArrayList<>();
             for (int invoiceId : invoiceIds) {
                 int startLineNumber = startLineNumbers.removeFirst();
-                lineNumberToIds.put(startLineNumber, invoiceId);
+                startLineToIds.put(startLineNumber, invoiceId);
                 lineNumbers.add(startLineNumber);
             }
             batches.put(lineNumber, lineNumbers);
         }
+        endLineToIds.put(lineNumber, invoiceIds.get(invoiceIds.size()-1));
     }
 
     /**
@@ -116,7 +124,7 @@ public class TARecord {
      * @return true if its a start line, false otherwise
      */
     public boolean isStart(int lineNumber) {
-        if (lineNumberToIds.containsKey(lineNumber)) {
+        if (startLineToIds.containsKey(lineNumber)) {
             return true;
         }
         else {
@@ -130,10 +138,20 @@ public class TARecord {
      * @param lineNumber line number
      * @return its index
      */
-    public int getInvoiceId(int startLineNumber) {
-        return lineNumberToIds.get(startLineNumber);
+    public int getStartInvoiceId(int startLineNumber) {
+        return startLineToIds.get(startLineNumber);
     }
     
+    /**
+     * get invoice ID for a end event
+     *
+     * @param lineNumber line number
+     * @return its index
+     */
+    public int getEndInvoiceId(int endLineNumber) {
+        return endLineToIds.get(endLineNumber);
+    }
+
     /**
      * @param lineNumber line number
      * @return true if its unstarted, false otherwise

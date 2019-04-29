@@ -87,9 +87,9 @@ public class TAChecker {
 
             if (record.isStart(lineNumber)) {
                 //  get its invoice id
-                int currentId = record.getInvoiceId(lineNumber);
+                int currentId = record.getStartInvoiceId(lineNumber);
                 if (currentId > preId) {
-                    preId = currentId;
+                    continue;
                 }
                 else {
                     // if invoice id larger than submit id before start => SHORTENED_JOB
@@ -102,32 +102,39 @@ public class TAChecker {
                 Violation violation = new Violation(lineNumber, name, "UNSTARTED_JOB");
                 violations.put(lineNumber, violation);
             }
-            // this is a batch
-            else if (record.isBatch(lineNumber)) {
-                List<Integer> batchLineNumbers = record.getBatchLineNumbers(lineNumber);
-                // count of shortened jobs
-                List<Integer> shortenedJobs = new ArrayList<>();
-                for (int batchLineNumber : batchLineNumbers) {
-                    if (violations.containsKey(batchLineNumber)) {
-                        Violation violation = violations.get(batchLineNumber);
-                        String type = violation.getType();
-                        if (type.equals("SHORTENED_JOB")) {
-                            shortenedJobs.add(batchLineNumber);
+            else {
+                // this is a batch
+                if (record.isBatch(lineNumber)) {
+                    List<Integer> batchLineNumbers = record.getBatchLineNumbers(lineNumber);
+                    // count of shortened jobs
+                    List<Integer> shortenedJobs = new ArrayList<>();
+                    for (int batchLineNumber : batchLineNumbers) {
+                        if (violations.containsKey(batchLineNumber)) {
+                            Violation violation = violations.get(batchLineNumber);
+                            String type = violation.getType();
+                            if (type.equals("SHORTENED_JOB")) {
+                                shortenedJobs.add(batchLineNumber);
+                            }
+                        }
+                    }
+                    // at least 1 shortened job
+                    if (shortenedJobs.size() > 0) {
+                        if (shortenedJobs.size() < batchLineNumbers.size()) {
+                            // this is a SUSPICIOUS_BATCH
+                            // don't include shortened jobs
+                            for (int shortenedJob : shortenedJobs) {
+                                Violation violation = violations.get(shortenedJob);
+                                violation.setInclude(false);
+                            }
+                            Violation violation = new Violation(lineNumber, name, "SUSPICIOUS_BATCH");
+                            violations.put(lineNumber, violation);
                         }
                     }
                 }
-                // at least 1 shortened job
-                if (shortenedJobs.size() > 0) {
-                    if (shortenedJobs.size() < batchLineNumbers.size()) {
-                        // this is a SUSPICIOUS_BATCH
-                        // don't include shortened jobs
-                        for (int shortenedJob : shortenedJobs) {
-                            Violation violation = violations.get(shortenedJob);
-                            violation.setInclude(false);
-                        }
-                        Violation violation = new Violation(lineNumber, name, "SUSPICIOUS_BATCH");
-                        violations.put(lineNumber, violation);
-                    }
+                // update preId
+                int currentId = record.getEndInvoiceId(lineNumber);
+                if (currentId > preId) {
+                    preId = currentId;
                 }
             }
         }
@@ -138,15 +145,15 @@ public class TAChecker {
                 violation.print();
             }
         }        
-    }
-
+    }                    
+    
     public static void main(String[] args) {
         System.out.println("Enter a work log:");
-        Scanner console = new Scanner(System.in);
-        String file = console.nextLine();
+        Scanner scanner = new Scanner(System.in);
+        String file = scanner.nextLine();
         TAChecker taChecker = new TAChecker(file);
         taChecker.sortWorkLog();
         taChecker.checkValidity();
-        console.close();
+        scanner.close();
     }
 }
