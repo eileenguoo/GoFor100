@@ -2,15 +2,20 @@
  * @author Eileen Guo
  * @email guoh@brandeis.edu
  */
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.*;
 import java.util.*;
 
+/**
+ * 
+ * @author eileenguo
+ * TAChecker is the main class that checks all the TA worklogs for instances of “fraud”
+ * 
+ */
 public class TAChecker {
 
-    ArrayList<String> TANames;
-    HashMap<String, TARecord> TARecords;
-    String fileName;
+    private ArrayList<String> TANames;
+    private HashMap<String, TARecord> TARecords;
+    private String fileName;
 
     public TAChecker(String s) {
         TARecords = new HashMap<>();
@@ -20,28 +25,27 @@ public class TAChecker {
     
     
     /**
-     * read text file to ta record
+     * read text file to ta record for each unqiue TA
      *
-     * @param file
      */
     public void sortWorkLog() {
-        BufferedReader br = null;
+        Scanner br = null;
         try {
-            br = new BufferedReader(new FileReader(fileName));
-            String line = br.readLine();
+            br = new Scanner(new File(fileName));
             int lineNumber = 1;
-            while (line != null) {
+            while (br.hasNextLine()) {
+                String line = br.nextLine();
                 String[] input = line.split(";");
-                String name = input[0].trim();
+                String name = input[0].trim(); //reads TA name
                 TARecord record;
-                if (TARecords.containsKey(name)) {
-                    record = TARecords.get(name);
+                if (TARecords.containsKey(name)) { //checks if TA name alreay existed in TARecords keyset
+                    record = TARecords.get(name); //assign record as the curr TARecord with corresponding key name
                 } else {
-                    record = new TARecord(name);
-                    TARecords.put(name, record);
+                    record = new TARecord(name); //if not existed, create a new TARecord for this name 
+                    TARecords.put(name, record); //put TA name and record in the hashmap
                 }
                 TANames.add(name);
-                String action = input[1];
+                String action = input[1]; 
                 // Job start event
                 if (action.equals("START")) {
                     record.addStart(lineNumber);
@@ -51,16 +55,15 @@ public class TAChecker {
                     String[] ids = action.split(",");
                     ArrayList<Integer> invoiceIds = new ArrayList<>();
                     for (String id : ids) {
-                        invoiceIds.add(Integer.parseInt(id.trim()));
+                        invoiceIds.add(Integer.parseInt(id.trim())); //add ids to the invoiceIDs list
                     }
                     // sort INVOICE id
                     Collections.sort(invoiceIds);
-                    record.addEnd(lineNumber, invoiceIds);
+                    record.addEnd(lineNumber, invoiceIds); //add linenum and id to curr TA's record
                 }
-                line = br.readLine();
                 lineNumber++;
             }
-        } catch (Exception e) {
+        } catch (Exception e) { //catch exceptions 
             e.printStackTrace();
         } finally {
             if (br != null)
@@ -73,17 +76,18 @@ public class TAChecker {
     }
 
     /**
-     * check input record validity
+     * check input record validity, go through each TA
      */
     public void checkValidity() {
         // previous invoice id
         int preId = 0;
         HashMap<Integer, Violation> violations = new HashMap<> ();
         
+        //go through each TA in the list
         for (int i = 0; i < TANames.size(); ++i) {
             int lineNumber = i + 1;
             String name = TANames.get(i);
-            TARecord record = TARecords.get(name);
+            TARecord record = TARecords.get(name); //corresponding TA record with name at index i
 
             if (record.isStart(lineNumber)) {
                 //  get its invoice id

@@ -78,7 +78,7 @@ public class TARecord {
         if (invoiceIds.size() == 1) {
             // there's an unstarted job
             if (startLineNumbers.size() == 0) {
-                unstartedLineNumbers.add(lineNumber);
+                unstartedLineNumbers.add(lineNumber); //add line num to the unstartedLineNumbers
                 return;
             }
             int startLineNumber = startLineNumbers.removeFirst();
@@ -88,8 +88,9 @@ public class TARecord {
         else {
             List<Integer> lineNumbers = new ArrayList<>();
             for (int invoiceId : invoiceIds) {
-                int startLineNumber = startLineNumbers.removeFirst();
-                startLineToIds.put(startLineNumber, invoiceId);
+            	//for multiple starts, assign int to the first added start line num
+                int startLineNumber = startLineNumbers.removeFirst(); 
+                startLineToIds.put(startLineNumber, invoiceId); //put curr invoice id to the line num
                 lineNumbers.add(startLineNumber);
             }
             batches.put(lineNumber, lineNumbers);
