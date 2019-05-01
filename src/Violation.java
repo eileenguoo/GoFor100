@@ -32,7 +32,7 @@ public class Violation {
     }
     
     /**
-     * set the include boolea
+     * set the include boolean
      * @param include boolean
      */
     public void setInclude(boolean include) {
