@@ -40,7 +40,7 @@ public class Violation {
     }
     
     /**
-     * print violation content
+     * print violation contents
      */
     public void print() {
         if (include) {
