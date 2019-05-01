@@ -1,5 +1,0 @@
-Kelly;START
-Theo;START
-Theo;10
-Kelly;12
-Danny;20
