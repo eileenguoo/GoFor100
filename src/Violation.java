@@ -1,6 +1,7 @@
 /**
  * @author Eileen Guo
  * @email guoh@brandeis.edu
+ * this class checks the violation types and print the violation 
  */
 
 public class Violation {
@@ -9,6 +10,12 @@ public class Violation {
     private String type;
     private boolean include;
     
+    /**
+     * constructor
+     * @param lineNumber violaton line num
+     * @param name name of TA
+     * @param type vioaltion type
+     */
     public Violation(int lineNumber, String name, String type) {
         this.lineNumber = lineNumber;
         this.name = name;
@@ -17,16 +24,16 @@ public class Violation {
     }
     
     /**
-     * 
-     * @return type
+     * get tyoe
+     * @return type type of violation
      */
     public String getType() {
         return type;
     }
     
     /**
-     * 
-     * @param include
+     * set the include boolean 
+     * @param include boolean
      */
     public void setInclude(boolean include) {
         this.include = include;
